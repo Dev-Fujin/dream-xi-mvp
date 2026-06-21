@@ -40,6 +40,7 @@ export type Slot = {
 };
 
 export type Style = "secure" | "balanced" | "bold";
+export type FormationName = "4-3-3" | "4-4-2" | "4-2-3-1";
 
 export type TeamStats = {
   attack: number;
@@ -69,19 +70,47 @@ export type Campaign = {
   matches: Match[];
 };
 
-const baseSlots: Slot[] = [
-  { id: "gk", label: "GK", x: 50, y: 90 },
-  { id: "rb", label: "RB", x: 82, y: 74 },
-  { id: "cb1", label: "CB", x: 62, y: 78 },
-  { id: "cb2", label: "CB", x: 38, y: 78 },
-  { id: "lb", label: "LB", x: 18, y: 74 },
-  { id: "dm", label: "DM", x: 50, y: 61 },
-  { id: "cm", label: "CM", x: 66, y: 48 },
-  { id: "am", label: "AM", x: 34, y: 45 },
-  { id: "rw", label: "RW", x: 82, y: 23 },
-  { id: "st", label: "ST", x: 50, y: 16 },
-  { id: "lw", label: "LW", x: 18, y: 23 },
-];
+const formationSlots: Record<FormationName, Slot[]> = {
+  "4-3-3": [
+    { id: "gk", label: "GK", x: 50, y: 90 },
+    { id: "rb", label: "RB", x: 82, y: 74 },
+    { id: "cb1", label: "CB", x: 62, y: 78 },
+    { id: "cb2", label: "CB", x: 38, y: 78 },
+    { id: "lb", label: "LB", x: 18, y: 74 },
+    { id: "dm", label: "DM", x: 50, y: 61 },
+    { id: "cm", label: "CM", x: 66, y: 48 },
+    { id: "am", label: "AM", x: 34, y: 45 },
+    { id: "rw", label: "RW", x: 82, y: 23 },
+    { id: "st", label: "ST", x: 50, y: 16 },
+    { id: "lw", label: "LW", x: 18, y: 23 },
+  ],
+  "4-4-2": [
+    { id: "gk", label: "GK", x: 50, y: 90 },
+    { id: "rb", label: "RB", x: 82, y: 75 },
+    { id: "cb1", label: "CB", x: 62, y: 78 },
+    { id: "cb2", label: "CB", x: 38, y: 78 },
+    { id: "lb", label: "LB", x: 18, y: 75 },
+    { id: "dm", label: "DM", x: 40, y: 57 },
+    { id: "cm", label: "CM", x: 60, y: 57 },
+    { id: "rw", label: "RW", x: 80, y: 40 },
+    { id: "lw", label: "LW", x: 20, y: 40 },
+    { id: "st1", label: "ST", x: 42, y: 17 },
+    { id: "st2", label: "ST", x: 58, y: 17 },
+  ],
+  "4-2-3-1": [
+    { id: "gk", label: "GK", x: 50, y: 90 },
+    { id: "rb", label: "RB", x: 82, y: 74 },
+    { id: "cb1", label: "CB", x: 62, y: 78 },
+    { id: "cb2", label: "CB", x: 38, y: 78 },
+    { id: "lb", label: "LB", x: 18, y: 74 },
+    { id: "dm1", label: "DM", x: 40, y: 61 },
+    { id: "dm2", label: "DM", x: 60, y: 61 },
+    { id: "am", label: "AM", x: 50, y: 43 },
+    { id: "rw", label: "RW", x: 80, y: 31 },
+    { id: "lw", label: "LW", x: 20, y: 31 },
+    { id: "st", label: "ST", x: 50, y: 16 },
+  ],
+};
 
 const styleShift: Record<Style, Partial<Record<Position, number>>> = {
   secure: { RB: 5, LB: 5, DM: 4, CM: 3, AM: 2, RW: 2, LW: 2, ST: 1 },
@@ -89,8 +118,8 @@ const styleShift: Record<Style, Partial<Record<Position, number>>> = {
   bold: { RB: -6, LB: -6, DM: -5, CM: -4, AM: -4, RW: -3, LW: -3, ST: -2 },
 };
 
-export function formation(style: Style): Slot[] {
-  return baseSlots.map((slot) => ({
+export function formation(style: Style, shape: FormationName = "4-3-3"): Slot[] {
+  return formationSlots[shape].map((slot) => ({
     ...slot,
     y: Math.max(12, Math.min(92, slot.y + (styleShift[style][slot.label] ?? 0))),
   }));
