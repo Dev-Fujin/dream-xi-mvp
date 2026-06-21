@@ -260,31 +260,17 @@ export default function Game() {
     return (
       <main className={`${shell} justify-center`}>
         <section className={`relative overflow-hidden rounded-[2rem] p-4 sm:rounded-[2.5rem] sm:p-10 ${panel}`}>
-          <div className="absolute -right-20 -top-20 h-52 w-52 rounded-full bg-[#f6c85f]/20 blur-3xl" />
-          <div className="grid min-w-0 gap-6 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
-            <div className="min-w-0">
-              <Eyebrow>World XI Dice · MVP</Eyebrow>
-              <h1 className="mt-4 max-w-3xl text-[clamp(2.45rem,13vw,5.8rem)] font-black leading-[0.88] tracking-[-0.07em] text-white">
-                Baue deine WM-Elf aus dem Zufall.
-              </h1>
-              <p className="mt-5 max-w-2xl text-base leading-7 text-emerald-50/72 sm:text-lg">
-                Erst Formation wählen. Dann Nation und Jahrgang rollen. Ein Spieler pro Roll — bis dein XI steht.
-              </p>
-              <div className="mt-7 grid gap-3 sm:max-w-md sm:grid-cols-2">
-                <Button onClick={startSetup}>Start</Button>
-                <Button onClick={() => setShowRules(true)} variant="secondary">Erklärung</Button>
-              </div>
-            </div>
-
-            <div className="min-w-0 rounded-[1.65rem] border border-[#f6c85f]/20 bg-[#f6c85f]/10 p-3 sm:p-5">
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3">
-                {["🇧🇷 2002", "🇦🇷 1986", "🇫🇷 1998", "🇩🇪 2014", "🇪🇸 2010", "🇮🇹 2006"].map((item) => (
-                  <div className="rounded-2xl bg-black/20 px-2 py-4 text-center font-mono text-lg font-black text-[#f8efd3] sm:text-xl" key={item}>
-                    {item}
-                  </div>
-                ))}
-              </div>
-              <p className="mt-4 text-xs font-black uppercase tracking-[0.16em] text-emerald-50/60">Roll board · mobile first · cup run</p>
+          <div className="min-w-0">
+            <Eyebrow>World XI Dice · MVP</Eyebrow>
+            <h1 className="mt-4 max-w-3xl text-[clamp(2.45rem,13vw,5.8rem)] font-black leading-[0.88] tracking-[-0.07em] text-white">
+              Baue deine WM-Elf aus dem Zufall.
+            </h1>
+            <p className="mt-5 max-w-2xl text-base leading-7 text-emerald-50/72 sm:text-lg">
+              Erst Formation wählen. Dann Nation und Jahrgang rollen. Ein Spieler pro Roll — bis dein XI steht.
+            </p>
+            <div className="mt-7 grid gap-3 sm:max-w-md sm:grid-cols-2">
+              <Button onClick={startSetup}>Start</Button>
+              <Button onClick={() => setShowRules(true)} variant="secondary">Erklärung</Button>
             </div>
           </div>
         </section>
