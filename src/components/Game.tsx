@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import React, { useMemo, useState, useRef, useEffect } from "react";
 import {
   availablePlayers,
   calcStats,
@@ -87,16 +87,18 @@ function Pitch({
   selected,
   onSlot,
   compact = false,
+  ref,
 }: {
   slots: Slot[];
   selected: Player | null;
   onSlot: (slot: Slot) => void;
   compact?: boolean;
+  ref?: React.LegacyRef<HTMLDivElement>;
 }) {
   const selectedSlotIds = selected ? compatibleSlotIds(selected, slots) : [];
 
   return (
-    <section className={`relative overflow-hidden rounded-[1.75rem] p-2 sm:rounded-[2rem] sm:p-3 ${panel}`}>
+    <section className={`relative overflow-hidden rounded-[1.75rem] p-2 sm:rounded-[2rem] sm:p-3 ${panel}`} ref={ref}>
       <div className="pointer-events-none absolute inset-x-4 top-3 h-5 rounded-full border border-[#f6c85f]/25" />
       <div
         className={`relative mx-auto w-full overflow-hidden rounded-[1.35rem] border border-emerald-100/20 bg-[radial-gradient(circle_at_50%_35%,rgba(255,255,255,0.11),transparent_4rem),linear-gradient(180deg,#1f8a58,#0c5035)] ${
@@ -104,9 +106,17 @@ function Pitch({
         }`}
       >
         <div className="absolute inset-3 rounded-[1rem] border-2 border-white/35" />
+        {/* Center spot */}
+        <div className="absolute left-1/2 top-1/2 w-2 h-2 -translate-x-1/2 -translate-y-1/2 bg-[#f6c85f]" />
+        {/* Center circle */}
         <div className="absolute left-1/2 top-1/2 h-24 w-24 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white/30" />
-        <div className="absolute left-[9%] right-[9%] top-3 h-[18%] rounded-b-3xl border-x-2 border-b-2 border-white/30" />
-        <div className="absolute bottom-3 left-[9%] right-[9%] h-[18%] rounded-t-3xl border-x-2 border-t-2 border-white/30" />
+        {/* Penalty boxes */}
+        <div className="absolute left-[20%] right-[20%] top-3 h-[16%] rounded-b-3xl border-x-2 border-b-2 border-white/30" />
+        <div className="absolute bottom-3 left-[20%] right-[20%] h-[16%] rounded-t-3xl border-x-2 border-t-2 border-white/30" />
+        {/* 6-yard box (goal area) inside penalty box */}
+        <div className="absolute left-[30%] right-[30%] top-3 h-[6%] rounded-b-3xl border-x-2 border-b-2 border-white/30" />
+        <div className="absolute bottom-3 left-[30%] right-[30%] h-[6%] rounded-t-3xl border-x-2 border-t-2 border-white/30" />
+        {/* Halfway line */}
         <div className="absolute inset-x-0 top-1/2 border-t-2 border-white/30" />
         <div className="absolute left-1/2 top-3 bottom-3 border-l border-dashed border-white/10" />
 
@@ -148,6 +158,17 @@ export default function Game() {
   const [rollingSquad, setRollingSquad] = useState<Squad>(squads[0]);
   const [selected, setSelected] = useState<Player | null>(null);
   const [campaign, setCampaign] = useState<Campaign | null>(null);
+  const [celebrate, setCelebrate] = useState(false);
+  const celebrationTimeout = useRef<number | null>(null);
+  const pitchRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    return () => {
+      if (celebrationTimeout.current !== null) {
+        clearTimeout(celebrationTimeout.current);
+        celebrationTimeout.current = null;
+      }
+    };
+  }, []);
 
   const usedIds = useMemo(() => new Set(slots.flatMap((slot) => (slot.player ? [slot.player.id] : []))), [slots]);
   const openCount = slots.filter((slot) => !slot.player).length;
@@ -170,6 +191,12 @@ export default function Game() {
   }
 
   function startRoll() {
+    // clear any existing celebration timeout
+    if (celebrationTimeout.current !== null) {
+      clearTimeout(celebrationTimeout.current);
+      celebrationTimeout.current = null;
+    }
+    setCelebrate(false);
     setStage("rolling");
     setSelected(null);
     setCampaign(null);
@@ -183,6 +210,11 @@ export default function Game() {
       setRollingSquad(next);
       setDraw(next);
       setStage("draft");
+      setCelebrate(true);
+      celebrationTimeout.current = window.setTimeout(() => {
+        setCelebrate(false);
+        celebrationTimeout.current = null;
+      }, 800);
     }, 1250);
   }
 
@@ -352,119 +384,133 @@ export default function Game() {
   }
 
   return (
-    <main className={`${shell} pb-20 lg:pb-5`}>
-      <header className={`grid gap-3 rounded-[1.75rem] p-3 sm:p-4 lg:grid-cols-[1fr_22rem] lg:items-center ${panel}`}>
-        <div className="min-w-0">
-          <Eyebrow>{shape} · {styleCopy[style].label}</Eyebrow>
-          <h1 className="mt-1 truncate text-3xl font-black tracking-[-0.06em] text-white sm:text-5xl">Pick your player.</h1>
-        </div>
-        <div className="grid grid-cols-3 gap-2">
-          <StatPill label="Attack" value={stats.attack || "—"} />
-          <StatPill label="Defense" value={stats.defense || "—"} />
-          <StatPill label="XI" value={`${11 - openCount}/11`} />
-        </div>
-      </header>
-
-      <section className="grid min-w-0 gap-3 lg:grid-cols-[minmax(0,0.92fr)_minmax(340px,1.22fr)_minmax(0,0.9fr)] lg:gap-4">
-        <aside className={`order-1 min-w-0 rounded-[1.75rem] p-3 sm:p-4 lg:order-none ${panel}`}>
-          <div className="grid min-w-0 gap-3">
-            <div className="min-w-0">
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-100/60">Rolled squad</p>
-              <h2 className="mt-1 truncate text-3xl font-black tracking-[-0.04em] text-white">{draw?.flag} {draw?.country}</h2>
-              <p className="font-mono text-sm text-[#f6c85f]">Cup {draw?.cup} · OVR {draw?.overall}</p>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <Button disabled={isComplete} onClick={startRoll} variant="secondary">Roll again</Button>
-              <Button onClick={resetDraft} variant="secondary">New XI</Button>
-            </div>
-            <Button disabled={!playerPool.length || isComplete} onClick={autoPick} variant="secondary">Auto pick</Button>
+    <>
+      <main className={`${shell} pb-20 lg:pb-5`}>
+        <header className={`grid gap-3 rounded-[1.75rem] p-3 sm:p-4 lg:grid-cols-[1fr_22rem] lg:items-center ${panel}`}>
+          <div className="min-w-0">
+            <Eyebrow>{shape} · {styleCopy[style].label}</Eyebrow>
+            <h1 className="mt-1 truncate text-3xl font-black tracking-[-0.06em] text-white sm:text-5xl">Pick your player.</h1>
           </div>
-
-          <div className="mt-4 space-y-2">
-            <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-100/60">Pick one eligible player</p>
-            <div className="grid max-h-[26rem] gap-2 overflow-y-auto pr-1 lg:max-h-[34rem]">
-              {playerPool.map((player) => {
-                const active = selected?.id === player.id;
-                return (
-                  <button
-                    className={`grid min-h-16 min-w-0 grid-cols-[2.25rem_minmax(0,1fr)_auto] items-center gap-2 rounded-2xl border p-3 text-left transition focus:outline-none focus:ring-2 focus:ring-[#f6c85f] ${active ? "border-[#f6c85f] bg-[#f6c85f] text-[#142018]" : "border-white/10 bg-white/[0.06] text-white"}`}
-                    key={player.id}
-                    onClick={() => setSelected(active ? null : player)}
-                    type="button"
-                  >
-                    <span className="font-mono text-lg font-black">#{player.number}</span>
-                    <span className="min-w-0">
-                      <span className="block truncate font-black">{player.name}</span>
-                      <span className="block truncate text-xs font-bold uppercase tracking-widest opacity-70">{player.positions.join("/")}</span>
-                    </span>
-                    <span className="rounded-xl bg-black/20 px-2 py-1 font-mono text-lg font-black">{player.rating}</span>
-                  </button>
-                );
-              })}
-              {!playerPool.length && !isComplete && <p className="rounded-2xl bg-white/5 p-4 text-sm text-emerald-50/60">No eligible player in this draw. Roll again.</p>}
-            </div>
+          <div className="grid grid-cols-3 gap-2">
+            <StatPill label="Attack" value={stats.attack || "—"} />
+            <StatPill label="Defense" value={stats.defense || "—"} />
+            <StatPill label="XI" value={`${11 - openCount}/11`} />
           </div>
-        </aside>
+        </header>
 
-        <div className="order-0 min-w-0 lg:order-none"><Pitch slots={slots} selected={selected} onSlot={addToSlot} /></div>
-
-        <aside className={`order-2 min-w-0 rounded-[1.75rem] p-3 sm:p-4 lg:order-none ${panel}`}>
-          <div className="flex min-w-0 items-center justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-100/60">Tournament desk</p>
-              <h2 className="mt-1 truncate text-2xl font-black text-white">Box score</h2>
-            </div>
-            <Button className="w-auto px-3" onClick={() => setStage("landing")} variant="ghost">Home</Button>
-          </div>
-
-          <div className="mt-4 grid grid-cols-3 gap-2">
-            <StatPill label="OVR" value={stats.overall || "—"} />
-            <StatPill label="Style" value={styleCopy[style].short} />
-            <StatPill label="Open" value={openCount} />
-          </div>
-
-          <div className="mt-4 overflow-hidden rounded-2xl border border-white/10">
-            {slots.map((slot) => (
-              <div className="grid min-w-0 grid-cols-[2.5rem_minmax(0,1fr)_2.5rem] items-center gap-2 border-b border-white/10 bg-white/[0.04] px-3 py-2 last:border-b-0" key={slot.id}>
-                <span className="font-mono text-sm font-black text-[#f6c85f]">{slot.label}</span>
-                <span className="truncate text-sm font-bold text-white/90">{slot.player?.name ?? "—"}</span>
-                <span className="text-right font-mono text-sm font-black text-white/70">{slot.player?.rating ?? ""}</span>
+        <section className="grid min-w-0 gap-3 lg:grid-cols-[minmax(0,0.92fr)_minmax(340px,1.22fr)_minmax(0,0.9fr)] lg:gap-4">
+          <aside className={`order-1 min-w-0 rounded-[1.75rem] p-3 sm:p-4 lg:order-none ${panel}`}>
+            <div className="grid min-w-0 gap-3">
+              <div className="min-w-0">
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-100/60">Rolled squad</p>
+                <h2 className="mt-1 truncate text-3xl font-black tracking-[-0.04em] text-white">{draw?.flag} {draw?.country}</h2>
+                <p className="font-mono text-sm text-[#f6c85f]">Cup {draw?.cup} · OVR {draw?.overall}</p>
               </div>
-            ))}
-          </div>
-
-          <div className="mt-4 hidden lg:grid"><Button disabled={!isComplete} onClick={simulate}>Simulate Cup</Button></div>
-
-          {campaign && (
-            <div className="mt-5 rounded-[1.5rem] border border-[#f6c85f]/25 bg-[#f6c85f]/10 p-4">
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-[#f6c85f]/80">Result card</p>
-              <h3 className="mt-1 text-4xl font-black tracking-[-0.05em] text-white">{campaign.champion ? "Champions" : "Eliminated"}</h3>
-              <div className="mt-3 grid grid-cols-4 gap-2">
-                <StatPill label="Rec" value={campaign.record} />
-                <StatPill label="GF" value={campaign.gf} />
-                <StatPill label="GA" value={campaign.ga} />
-                <StatPill label="Badge" value={campaign.badge ? "★" : "—"} />
+              <div className="grid grid-cols-2 gap-2">
+                <Button disabled={isComplete} onClick={startRoll} variant="secondary">Roll again</Button>
+                <Button onClick={resetDraft} variant="secondary">New XI</Button>
               </div>
-              {campaign.badge && <p className="mt-3 rounded-full bg-[#f6c85f] px-3 py-2 text-center text-sm font-black uppercase tracking-widest text-[#142018]">{campaign.badge}</p>}
-              <div className="mt-4 space-y-2">
-                {campaign.matches.map((match) => (
-                  <div className="rounded-2xl bg-black/20 p-3" key={match.phase}>
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="font-bold text-white">{match.phase}</span>
-                      <span className="font-mono text-xl font-black text-[#f6c85f]">{match.gf}-{match.ga}</span>
+              <Button disabled={!playerPool.length || isComplete} onClick={autoPick} variant="secondary">Auto pick</Button>
+            </div>
+
+            <div className="mt-4 space-y-2">
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-100/60">Pick one eligible player</p>
+              <div className="grid max-h-[26rem] gap-2 overflow-y-auto pr-1 lg:max-h-[34rem]">
+                {playerPool.map((player) => {
+                  const active = selected?.id === player.id;
+                  return (
+                    <button
+                      className={`grid min-h-16 min-w-0 grid-cols-[2.25rem_minmax(0,1fr)_auto] items-center gap-2 rounded-2xl border p-3 text-left transition focus:outline-none focus:ring-2 focus:ring-[#f6c85f] ${active ? "border-[#f6c85f] bg-[#f6c85f] text-[#142018]" : "border-white/10 bg-white/[0.06] text-white"}`}
+                      key={player.id}
+                      onClick={() => {
+                      setSelected(active ? null : player);
+                      if (!active) {
+                        pitchRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      }
+                    }}
+                      type="button"
+                    >
+                      <span className="font-mono text-lg font-black">#{player.number}</span>
+                      <span className="min-w-0">
+                        <span className="block truncate font-black">{player.name}</span>
+                        <span className="block truncate text-xs font-bold uppercase tracking-widest opacity-70">{player.positions.join("/")}</span>
+                      </span>
+                      <span className="rounded-xl bg-black/20 px-2 py-1 font-mono text-lg font-black">{player.rating}</span>
+                    </button>
+                  );
+                })}
+                {!playerPool.length && !isComplete && <p className="rounded-2xl bg-white/5 p-4 text-sm text-emerald-50/60">No eligible player in this draw. Roll again.</p>}
+              </div>
+            </div>
+          </aside>
+
+          <div className="order-0 min-w-0 lg:order-none"><Pitch slots={slots} selected={selected} onSlot={addToSlot} ref={pitchRef} /></div>
+
+          <aside className={`order-2 min-w-0 rounded-[1.75rem] p-3 sm:p-4 lg:order-none ${panel}`}>
+            <div className="flex min-w-0 items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-100/60">Tournament desk</p>
+                <h2 className="mt-1 truncate text-2xl font-black text-white">Box score</h2>
+              </div>
+              <Button className="w-auto px-3" onClick={() => setStage("landing")} variant="ghost">Home</Button>
+            </div>
+
+            <div className="mt-4 grid grid-cols-3 gap-2">
+              <StatPill label="OVR" value={stats.overall || "—"} />
+              <StatPill label="Style" value={styleCopy[style].short} />
+              <StatPill label="Open" value={openCount} />
+            </div>
+
+            <div className="mt-4 overflow-hidden rounded-2xl border border-white/10">
+              {slots.map((slot) => (
+                <div className="grid min-w-0 grid-cols-[2.5rem_minmax(0,1fr)_2.5rem] items-center gap-2 border-b border-white/10 bg-white/[0.04] px-3 py-2 last:border-b-0" key={slot.id}>
+                  <span className="font-mono text-sm font-black text-[#f6c85f]">{slot.label}</span>
+                  <span className="truncate text-sm font-bold text-white/90">{slot.player?.name ?? "—"}</span>
+                  <span className="text-right font-mono text-sm font-black text-white/70">{slot.player?.rating ?? ""}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-4 hidden lg:grid"><Button disabled={!isComplete} onClick={simulate}>Simulate Cup</Button></div>
+
+            {campaign && (
+              <div className="mt-5 rounded-[1.5rem] border border-[#f6c85f]/25 bg-[#f6c85f]/10 p-4">
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-[#f6c85f]/80">Result card</p>
+                <h3 className="mt-1 text-4xl font-black tracking-[-0.05em] text-white">{campaign.champion ? "Champions" : "Eliminated"}</h3>
+                <div className="mt-3 grid grid-cols-4 gap-2">
+                  <StatPill label="Rec" value={campaign.record} />
+                  <StatPill label="GF" value={campaign.gf} />
+                  <StatPill label="GA" value={campaign.ga} />
+                  <StatPill label="Badge" value={campaign.badge ? "★" : "—"} />
+                </div>
+                {campaign.badge && <p className="mt-3 rounded-full bg-[#f6c85f] px-3 py-2 text-center text-sm font-black uppercase tracking-widest text-[#142018]">{campaign.badge}</p>}
+                <div className="mt-4 space-y-2">
+                  {campaign.matches.map((match) => (
+                    <div className="rounded-2xl bg-black/20 p-3" key={match.phase}>
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="font-bold text-white">{match.phase}</span>
+                        <span className="font-mono text-xl font-black text-[#f6c85f]">{match.gf}-{match.ga}</span>
+                      </div>
+                      <p className="text-xs uppercase tracking-widest text-emerald-50/60">vs {match.opponent} · OVR {match.opponentOverall} {match.penalties ? `· ${match.penalties}` : ""}</p>
                     </div>
-                    <p className="text-xs uppercase tracking-widest text-emerald-50/60">vs {match.opponent} · OVR {match.opponentOverall} {match.penalties ? `· ${match.penalties}` : ""}</p>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
-        </aside>
-      </section>
+            )}
+          </aside>
+        </section>
 
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[#07130f]/92 p-3 backdrop-blur lg:hidden">
-        <Button disabled={!isComplete} onClick={simulate}>{isComplete ? "Simulate Cup" : `${openCount} slots open`}</Button>
-      </div>
-    </main>
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[#07130f]/92 p-3 backdrop-blur lg:hidden">
+          <Button disabled={!isComplete} onClick={simulate}>{isComplete ? "Simulate Cup" : `${openCount} slots open`}</Button>
+        </div>
+      </main>
+      {celebrate && draw && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="text-9xl font-black animate-pulse">
+            {draw.flag}
+          </div>
+        </div>
+      )}
+    </>
   );
 }
