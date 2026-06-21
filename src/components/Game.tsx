@@ -18,34 +18,39 @@ import {
 
 type Stage = "landing" | "setup" | "ready" | "rolling" | "draft";
 
-const styleCopy: Record<Style, { label: string; description: string }> = {
-  secure: { label: "Defensive", description: "Tiefer Block, stabile Restverteidigung" },
-  balanced: { label: "Balanced", description: "Kompakt, flexibel, wenig Risiko" },
-  bold: { label: "Offensive", description: "Hohe Außen, mehr Druck, mehr Risiko" },
+const styleCopy: Record<Style, { label: string; short: string; description: string }> = {
+  secure: { label: "Defensive", short: "DEF", description: "Tiefer Block, sichere Absicherung" },
+  balanced: { label: "Balanced", short: "BAL", description: "Kompakt, flexibel, kontrolliert" },
+  bold: { label: "Offensive", short: "OFF", description: "Höhere Außen, mehr Druck" },
 };
 
 const formations: FormationName[] = ["4-3-3", "4-4-2", "4-2-3-1"];
+const shell = "mx-auto flex min-h-dvh w-full max-w-7xl flex-col gap-3 overflow-x-hidden px-3 py-3 sm:gap-4 sm:px-6 sm:py-5 lg:px-8";
+const panel = "border border-white/10 bg-[#10241d]/85 shadow-2xl shadow-black/35 backdrop-blur";
 
 function Button({
   children,
   onClick,
   disabled,
   variant = "primary",
+  className = "",
 }: {
   children: React.ReactNode;
   onClick?: () => void;
   disabled?: boolean;
   variant?: "primary" | "secondary" | "ghost";
+  className?: string;
 }) {
   const styles = {
-    primary: "bg-amber-300 text-emerald-950 shadow-[0_8px_0_#9a6512] active:translate-y-1 active:shadow-[0_4px_0_#9a6512]",
-    secondary: "border border-emerald-200/25 bg-white/10 text-emerald-50 hover:bg-white/15",
-    ghost: "text-emerald-100 underline decoration-amber-300/60 underline-offset-4",
+    primary:
+      "bg-[#f6c85f] text-[#142018] shadow-[0_6px_0_#9b6b20] active:translate-y-1 active:shadow-[0_2px_0_#9b6b20]",
+    secondary: "border border-white/12 bg-white/[0.07] text-[#f8efd3] hover:bg-white/[0.11]",
+    ghost: "text-[#f8efd3] underline decoration-[#f6c85f]/70 underline-offset-4",
   };
 
   return (
     <button
-      className={`rounded-2xl px-4 py-3 text-sm font-black uppercase tracking-[0.16em] transition disabled:opacity-40 ${styles[variant]}`}
+      className={`min-h-12 w-full rounded-2xl px-4 py-3 text-center text-[0.78rem] font-black uppercase tracking-[0.12em] transition focus:outline-none focus:ring-2 focus:ring-[#f6c85f] disabled:opacity-40 ${styles[variant]} ${className}`}
       disabled={disabled}
       onClick={onClick}
       type="button"
@@ -55,11 +60,15 @@ function Button({
   );
 }
 
+function Eyebrow({ children }: { children: React.ReactNode }) {
+  return <p className="font-mono text-[0.66rem] font-black uppercase tracking-[0.24em] text-[#f6c85f]/80">{children}</p>;
+}
+
 function StatPill({ label, value }: { label: string; value: number | string }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-black/20 px-3 py-2 text-center">
-      <div className="font-mono text-2xl font-black text-amber-200">{value}</div>
-      <div className="text-[0.62rem] font-bold uppercase tracking-[0.18em] text-emerald-100/70">{label}</div>
+    <div className="min-w-0 rounded-2xl border border-white/10 bg-black/20 px-2 py-2 text-center">
+      <div className="truncate font-mono text-xl font-black text-[#f6c85f] sm:text-2xl">{value}</div>
+      <div className="truncate text-[0.58rem] font-black uppercase tracking-[0.14em] text-emerald-100/65">{label}</div>
     </div>
   );
 }
@@ -77,31 +86,39 @@ function Pitch({
   slots,
   selected,
   onSlot,
+  compact = false,
 }: {
   slots: Slot[];
   selected: Player | null;
   onSlot: (slot: Slot) => void;
+  compact?: boolean;
 }) {
   const selectedSlotIds = selected ? compatibleSlotIds(selected, slots) : [];
 
   return (
-    <section className="rounded-[2rem] border border-emerald-100/15 bg-emerald-900/30 p-3 shadow-2xl shadow-black/40">
-      <div className="relative aspect-[9/13] min-h-[34rem] overflow-hidden rounded-[1.5rem] border border-emerald-100/20 bg-[radial-gradient(circle_at_50%_30%,rgba(70,190,130,0.35),transparent_20rem),linear-gradient(180deg,#1b7b4d,#0f5539)] sm:aspect-[10/13]">
-        <div className="absolute inset-4 rounded-[1.25rem] border-2 border-white/35" />
-        <div className="absolute left-1/2 top-1/2 h-28 w-28 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white/30" />
-        <div className="absolute left-[8%] right-[8%] top-4 h-[18%] rounded-b-3xl border-x-2 border-b-2 border-white/30" />
-        <div className="absolute bottom-4 left-[8%] right-[8%] h-[18%] rounded-t-3xl border-x-2 border-t-2 border-white/30" />
+    <section className={`relative overflow-hidden rounded-[1.75rem] p-2 sm:rounded-[2rem] sm:p-3 ${panel}`}>
+      <div className="pointer-events-none absolute inset-x-4 top-3 h-5 rounded-full border border-[#f6c85f]/25" />
+      <div
+        className={`relative mx-auto w-full overflow-hidden rounded-[1.35rem] border border-emerald-100/20 bg-[radial-gradient(circle_at_50%_35%,rgba(255,255,255,0.11),transparent_4rem),linear-gradient(180deg,#1f8a58,#0c5035)] ${
+          compact ? "aspect-[9/11] min-h-[24rem]" : "aspect-[9/12] min-h-[29rem] sm:min-h-[34rem]"
+        }`}
+      >
+        <div className="absolute inset-3 rounded-[1rem] border-2 border-white/35" />
+        <div className="absolute left-1/2 top-1/2 h-24 w-24 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white/30" />
+        <div className="absolute left-[9%] right-[9%] top-3 h-[18%] rounded-b-3xl border-x-2 border-b-2 border-white/30" />
+        <div className="absolute bottom-3 left-[9%] right-[9%] h-[18%] rounded-t-3xl border-x-2 border-t-2 border-white/30" />
         <div className="absolute inset-x-0 top-1/2 border-t-2 border-white/30" />
+        <div className="absolute left-1/2 top-3 bottom-3 border-l border-dashed border-white/10" />
 
         {slots.map((slot) => {
           const canPlace = selectedSlotIds.includes(slot.id);
           return (
             <button
-              className={`absolute w-24 -translate-x-1/2 -translate-y-1/2 rounded-2xl border p-2 text-center shadow-xl backdrop-blur transition sm:w-28 ${
+              className={`absolute w-[4.65rem] -translate-x-1/2 -translate-y-1/2 rounded-xl border px-1.5 py-1.5 text-center shadow-xl backdrop-blur transition focus:outline-none focus:ring-2 focus:ring-[#f6c85f] sm:w-24 sm:rounded-2xl sm:p-2 ${
                 canPlace
-                  ? "scale-105 border-amber-200 bg-amber-200 text-emerald-950"
+                  ? "scale-105 border-[#f6c85f] bg-[#f6c85f] text-[#142018]"
                   : slot.player
-                    ? "border-white/20 bg-[#06130f]/85 text-white"
+                    ? "border-white/20 bg-[#07130f]/88 text-white"
                     : "border-dashed border-white/35 bg-white/10 text-white/80"
               }`}
               disabled={!slot.player && !canPlace}
@@ -110,9 +127,9 @@ function Pitch({
               style={{ left: `${slot.x}%`, top: `${slot.y}%` }}
               type="button"
             >
-              <span className="block text-[0.62rem] font-black uppercase tracking-widest opacity-70">{slot.label}</span>
-              <span className="block truncate text-sm font-black">{slot.player?.name ?? (canPlace ? "Place" : "Open")}</span>
-              {slot.player && <span className="font-mono text-lg font-black text-amber-200">{slot.player.rating}</span>}
+              <span className="block text-[0.55rem] font-black uppercase tracking-widest opacity-70 sm:text-[0.62rem]">{slot.label}</span>
+              <span className="block truncate text-[0.72rem] font-black leading-4 sm:text-sm">{slot.player?.name ?? (canPlace ? "Place" : "Open")}</span>
+              {slot.player && <span className="font-mono text-sm font-black text-[#f6c85f] sm:text-lg">{slot.player.rating}</span>}
             </button>
           );
         })}
@@ -183,9 +200,7 @@ export default function Game() {
     setSlots((current) => current.map((item) => (item.id === slotId ? { ...item, player } : item)));
     setSelected(null);
     setDraw(null);
-    if (openCount > 1) {
-      window.setTimeout(startRoll, 250);
-    }
+    if (openCount > 1) window.setTimeout(startRoll, 250);
   }
 
   function autoPick() {
@@ -194,9 +209,7 @@ export default function Game() {
     const slotId = compatibleSlotIds(best, slots)[0];
     if (!slotId) return;
     setSelected(best);
-    setTimeout(() => {
-      placePlayer(best, slotId);
-    }, 80);
+    setTimeout(() => placePlayer(best, slotId), 80);
   }
 
   function resetDraft() {
@@ -211,41 +224,46 @@ export default function Game() {
     setCampaign(simulateCampaign(stats));
   }
 
-  const shell = "mx-auto flex min-h-dvh w-full max-w-7xl flex-col gap-4 px-4 py-4 sm:px-6 lg:px-8";
-
   if (stage === "landing") {
     return (
       <main className={`${shell} justify-center`}>
-        <section className="overflow-hidden rounded-[2.5rem] border border-white/10 bg-white/[0.07] p-6 shadow-2xl shadow-black/40 sm:p-10">
-          <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
-            <div>
-              <p className="font-mono text-xs font-bold uppercase tracking-[0.35em] text-amber-200/80">World XI Dice · MVP</p>
-              <h1 className="mt-4 max-w-3xl text-5xl font-black tracking-tight text-white sm:text-7xl">Baue deine WM-Elf aus zufälligen Nationen.</h1>
-              <p className="mt-5 max-w-2xl text-lg leading-8 text-emerald-50/70">
-                Wähle zuerst deine Aufstellung, rolle danach Nation + Jahrgang und fülle Slot für Slot dein Dream Team.
+        <section className={`relative overflow-hidden rounded-[2rem] p-4 sm:rounded-[2.5rem] sm:p-10 ${panel}`}>
+          <div className="absolute -right-20 -top-20 h-52 w-52 rounded-full bg-[#f6c85f]/20 blur-3xl" />
+          <div className="grid min-w-0 gap-6 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
+            <div className="min-w-0">
+              <Eyebrow>World XI Dice · MVP</Eyebrow>
+              <h1 className="mt-4 max-w-3xl text-[clamp(2.45rem,13vw,5.8rem)] font-black leading-[0.88] tracking-[-0.07em] text-white">
+                Baue deine WM-Elf aus dem Zufall.
+              </h1>
+              <p className="mt-5 max-w-2xl text-base leading-7 text-emerald-50/72 sm:text-lg">
+                Erst Formation wählen. Dann Nation und Jahrgang rollen. Ein Spieler pro Roll — bis dein XI steht.
               </p>
-              <div className="mt-8 grid gap-3 sm:max-w-md sm:grid-cols-2">
+              <div className="mt-7 grid gap-3 sm:max-w-md sm:grid-cols-2">
                 <Button onClick={startSetup}>Start</Button>
                 <Button onClick={() => setShowRules(true)} variant="secondary">Erklärung</Button>
               </div>
             </div>
-            <div className="rounded-[2rem] border border-amber-200/20 bg-amber-200/10 p-5">
-              <div className="grid grid-cols-3 gap-3">
+
+            <div className="min-w-0 rounded-[1.65rem] border border-[#f6c85f]/20 bg-[#f6c85f]/10 p-3 sm:p-5">
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3">
                 {["🇧🇷 2002", "🇦🇷 1986", "🇫🇷 1998", "🇩🇪 2014", "🇪🇸 2010", "🇮🇹 2006"].map((item) => (
-                  <div className="rounded-2xl bg-black/20 p-4 text-center font-mono text-xl font-black text-amber-100" key={item}>{item}</div>
+                  <div className="rounded-2xl bg-black/20 px-2 py-4 text-center font-mono text-lg font-black text-[#f8efd3] sm:text-xl" key={item}>
+                    {item}
+                  </div>
                 ))}
               </div>
-              <p className="mt-4 text-sm font-bold uppercase tracking-widest text-emerald-50/60">Roll animation · tactical setup · cup simulation</p>
+              <p className="mt-4 text-xs font-black uppercase tracking-[0.16em] text-emerald-50/60">Roll board · mobile first · cup run</p>
             </div>
           </div>
         </section>
+
         {showRules && (
-          <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-4">
-            <section className="max-w-lg rounded-[2rem] border border-white/10 bg-[#0d241c] p-6 text-white shadow-2xl">
-              <h2 className="text-3xl font-black">So funktioniert es</h2>
-              <ol className="mt-4 list-decimal space-y-3 pl-5 text-emerald-50/75">
-                <li>Wähle einmal deine Formation und Spielweise.</li>
-                <li>Starte den Roll: Nationen und Jahrgänge laufen als Animation durch.</li>
+          <div className="fixed inset-0 z-50 grid place-items-end bg-black/70 p-3 sm:place-items-center">
+            <section className={`w-full max-w-lg rounded-[1.75rem] p-5 text-white sm:p-6 ${panel}`}>
+              <h2 className="text-3xl font-black tracking-tight">So funktioniert es</h2>
+              <ol className="mt-4 list-decimal space-y-3 pl-5 text-sm leading-6 text-emerald-50/75 sm:text-base">
+                <li>Wähle einmal Formation und Spielweise.</li>
+                <li>Starte den Roll: Nation und Jahrgang laufen durch.</li>
                 <li>Wähle einen passenden Spieler für einen offenen Slot.</li>
                 <li>Nach jedem Pick rollt der nächste Kader. Bei 11/11 simulierst du die WM.</li>
               </ol>
@@ -259,18 +277,18 @@ export default function Game() {
 
   if (stage === "setup") {
     return (
-      <main className={`${shell} justify-center`}>
-        <section className="rounded-[2.5rem] border border-white/10 bg-white/[0.07] p-5 shadow-2xl shadow-black/40 sm:p-8">
-          <p className="font-mono text-xs font-bold uppercase tracking-[0.35em] text-amber-200/80">Step 1 · Setup</p>
-          <h1 className="mt-3 text-4xl font-black text-white sm:text-6xl">Wähle deine Basis.</h1>
-          <div className="mt-6 grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-            <div className="space-y-5">
-              <div>
-                <p className="mb-2 text-xs font-black uppercase tracking-[0.22em] text-emerald-100/60">Aufstellung</p>
-                <div className="grid gap-2">
+      <main className={`${shell} pb-24 sm:pb-5`}>
+        <section className={`min-w-0 rounded-[2rem] p-4 sm:rounded-[2.5rem] sm:p-8 ${panel}`}>
+          <Eyebrow>Step 1 · Setup</Eyebrow>
+          <h1 className="mt-3 text-[clamp(2rem,10vw,4rem)] font-black leading-none tracking-[-0.05em] text-white">Wähle deine Basis.</h1>
+          <div className="mt-5 grid min-w-0 gap-4 lg:grid-cols-[0.86fr_1.14fr] lg:gap-6">
+            <div className="min-w-0 space-y-4">
+              <div className="rounded-[1.5rem] border border-white/10 bg-black/15 p-3">
+                <p className="mb-2 text-xs font-black uppercase tracking-[0.18em] text-emerald-100/60">Aufstellung</p>
+                <div className="grid grid-cols-1 gap-2 min-[380px]:grid-cols-3">
                   {formations.map((item) => (
                     <button
-                      className={`rounded-2xl border p-4 text-left font-black transition ${shape === item ? "border-amber-300 bg-amber-300 text-emerald-950" : "border-white/10 bg-white/5 text-white"}`}
+                      className={`min-h-14 min-w-0 rounded-2xl border px-2 py-3 text-center font-mono text-lg font-black tracking-[-0.03em] transition focus:outline-none focus:ring-2 focus:ring-[#f6c85f] ${shape === item ? "border-[#f6c85f] bg-[#f6c85f] text-[#142018]" : "border-white/10 bg-white/[0.06] text-white"}`}
                       key={item}
                       onClick={() => applySetup(item, style)}
                       type="button"
@@ -280,27 +298,31 @@ export default function Game() {
                   ))}
                 </div>
               </div>
-              <div>
-                <p className="mb-2 text-xs font-black uppercase tracking-[0.22em] text-emerald-100/60">Spielweise</p>
+
+              <div className="rounded-[1.5rem] border border-white/10 bg-black/15 p-3">
+                <p className="mb-2 text-xs font-black uppercase tracking-[0.18em] text-emerald-100/60">Spielweise</p>
                 <div className="grid gap-2">
                   {(Object.keys(styleCopy) as Style[]).map((item) => (
                     <button
-                      className={`rounded-2xl border p-4 text-left transition ${style === item ? "border-amber-300 bg-amber-300 text-emerald-950" : "border-white/10 bg-white/5 text-white"}`}
+                      className={`min-w-0 rounded-2xl border p-3 text-left transition focus:outline-none focus:ring-2 focus:ring-[#f6c85f] ${style === item ? "border-[#f6c85f] bg-[#f6c85f] text-[#142018]" : "border-white/10 bg-white/[0.06] text-white"}`}
                       key={item}
                       onClick={() => applySetup(shape, item)}
                       type="button"
                     >
-                      <span className="block font-black uppercase tracking-widest">{styleCopy[item].label}</span>
-                      <span className="text-sm opacity-70">{styleCopy[item].description}</span>
+                      <span className="block text-sm font-black uppercase tracking-[0.14em]">{styleCopy[item].label}</span>
+                      <span className="mt-0.5 block text-sm leading-5 opacity-75">{styleCopy[item].description}</span>
                     </button>
                   ))}
                 </div>
               </div>
-              <Button onClick={() => setStage("ready")}>Setup bestätigen</Button>
+              <Button className="hidden sm:block" onClick={() => setStage("ready")}>Setup bestätigen</Button>
             </div>
-            <Pitch slots={slots} selected={null} onSlot={() => undefined} />
+            <Pitch slots={slots} selected={null} onSlot={() => undefined} compact />
           </div>
         </section>
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[#07130f]/92 p-3 backdrop-blur sm:hidden">
+          <Button onClick={() => setStage("ready")}>Setup bestätigen</Button>
+        </div>
       </main>
     );
   }
@@ -309,14 +331,18 @@ export default function Game() {
     const active = stage === "rolling" ? rollingSquad : null;
     return (
       <main className={`${shell} justify-center`}>
-        <section className="rounded-[2.5rem] border border-white/10 bg-white/[0.07] p-6 text-center shadow-2xl shadow-black/40 sm:p-10">
-          <p className="font-mono text-xs font-bold uppercase tracking-[0.35em] text-amber-200/80">Step 2 · First roll</p>
-          <h1 className="mt-3 text-4xl font-black text-white sm:text-6xl">{stage === "rolling" ? "Rolling…" : "Bereit für den ersten Roll?"}</h1>
-          <div className="mx-auto mt-8 max-w-md rounded-[2rem] border border-amber-200/20 bg-black/20 p-8">
-            <div className={`text-7xl font-black transition ${stage === "rolling" ? "animate-pulse" : ""}`}>{active ? active.flag : "🎲"}</div>
-            <div className="mt-4 font-mono text-3xl font-black text-amber-200">{active ? `${active.country} ${active.cup}` : `${shape} · ${styleCopy[style].label}`}</div>
+        <section className={`rounded-[2rem] p-5 text-center sm:rounded-[2.5rem] sm:p-10 ${panel}`}>
+          <Eyebrow>Step 2 · First roll</Eyebrow>
+          <h1 className="mt-3 text-[clamp(2rem,10vw,4rem)] font-black leading-none tracking-[-0.05em] text-white">
+            {stage === "rolling" ? "Rolling…" : "Bereit für den ersten Roll?"}
+          </h1>
+          <div className="mx-auto mt-7 max-w-md overflow-hidden rounded-[2rem] border border-[#f6c85f]/20 bg-black/22 p-5 sm:p-8">
+            <div className={`text-7xl font-black transition sm:text-8xl ${stage === "rolling" ? "animate-pulse" : ""}`}>{active ? active.flag : "🎲"}</div>
+            <div className="mt-4 break-words font-mono text-2xl font-black text-[#f6c85f] sm:text-3xl">
+              {active ? `${active.country} ${active.cup}` : `${shape} · ${styleCopy[style].label}`}
+            </div>
           </div>
-          <div className="mx-auto mt-8 grid max-w-sm gap-3">
+          <div className="mx-auto mt-7 grid max-w-sm gap-3">
             <Button disabled={stage === "rolling"} onClick={startRoll}>Roll starten</Button>
             <Button disabled={stage === "rolling"} onClick={() => setStage("setup")} variant="secondary">Setup ändern</Button>
           </div>
@@ -326,51 +352,50 @@ export default function Game() {
   }
 
   return (
-    <main className={shell}>
-      <header className="flex flex-col gap-3 rounded-[2rem] border border-white/10 bg-white/[0.06] p-4 shadow-2xl shadow-black/30 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="font-mono text-xs font-bold uppercase tracking-[0.3em] text-amber-200/80">{shape} · {styleCopy[style].label}</p>
-          <h1 className="mt-1 text-3xl font-black tracking-tight text-white sm:text-5xl">Pick your player.</h1>
+    <main className={`${shell} pb-20 lg:pb-5`}>
+      <header className={`grid gap-3 rounded-[1.75rem] p-3 sm:p-4 lg:grid-cols-[1fr_22rem] lg:items-center ${panel}`}>
+        <div className="min-w-0">
+          <Eyebrow>{shape} · {styleCopy[style].label}</Eyebrow>
+          <h1 className="mt-1 truncate text-3xl font-black tracking-[-0.06em] text-white sm:text-5xl">Pick your player.</h1>
         </div>
-        <div className="grid grid-cols-3 gap-2 sm:min-w-80">
+        <div className="grid grid-cols-3 gap-2">
           <StatPill label="Attack" value={stats.attack || "—"} />
           <StatPill label="Defense" value={stats.defense || "—"} />
           <StatPill label="XI" value={`${11 - openCount}/11`} />
         </div>
       </header>
 
-      <section className="grid gap-4 lg:grid-cols-[minmax(0,0.95fr)_minmax(360px,1.25fr)_minmax(0,0.9fr)]">
-        <aside className="order-1 rounded-[2rem] border border-white/10 bg-[#0d241c]/90 p-4 lg:order-none">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-xs font-black uppercase tracking-[0.22em] text-emerald-100/60">Rolled squad</p>
-              <h2 className="mt-1 text-3xl font-black text-white">{draw?.flag} {draw?.country}</h2>
-              <p className="font-mono text-amber-200">Cup {draw?.cup} · OVR {draw?.overall}</p>
+      <section className="grid min-w-0 gap-3 lg:grid-cols-[minmax(0,0.92fr)_minmax(340px,1.22fr)_minmax(0,0.9fr)] lg:gap-4">
+        <aside className={`order-1 min-w-0 rounded-[1.75rem] p-3 sm:p-4 lg:order-none ${panel}`}>
+          <div className="grid min-w-0 gap-3">
+            <div className="min-w-0">
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-100/60">Rolled squad</p>
+              <h2 className="mt-1 truncate text-3xl font-black tracking-[-0.04em] text-white">{draw?.flag} {draw?.country}</h2>
+              <p className="font-mono text-sm text-[#f6c85f]">Cup {draw?.cup} · OVR {draw?.overall}</p>
             </div>
-            <Button disabled={isComplete} onClick={startRoll} variant="secondary">Roll again</Button>
-          </div>
-
-          <div className="mt-4 grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-2">
+              <Button disabled={isComplete} onClick={startRoll} variant="secondary">Roll again</Button>
+              <Button onClick={resetDraft} variant="secondary">New XI</Button>
+            </div>
             <Button disabled={!playerPool.length || isComplete} onClick={autoPick} variant="secondary">Auto pick</Button>
-            <Button onClick={resetDraft} variant="secondary">New XI</Button>
           </div>
 
-          <div className="mt-5 space-y-2">
-            <p className="text-xs font-black uppercase tracking-[0.22em] text-emerald-100/60">Pick one eligible player</p>
-            <div className="grid max-h-[34rem] gap-2 overflow-y-auto pr-1">
+          <div className="mt-4 space-y-2">
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-100/60">Pick one eligible player</p>
+            <div className="grid max-h-[26rem] gap-2 overflow-y-auto pr-1 lg:max-h-[34rem]">
               {playerPool.map((player) => {
                 const active = selected?.id === player.id;
                 return (
                   <button
-                    className={`grid grid-cols-[2.5rem_1fr_auto] items-center gap-3 rounded-2xl border p-3 text-left transition ${active ? "border-amber-300 bg-amber-300 text-emerald-950" : "border-white/10 bg-white/[0.06] text-white"}`}
+                    className={`grid min-h-16 min-w-0 grid-cols-[2.25rem_minmax(0,1fr)_auto] items-center gap-2 rounded-2xl border p-3 text-left transition focus:outline-none focus:ring-2 focus:ring-[#f6c85f] ${active ? "border-[#f6c85f] bg-[#f6c85f] text-[#142018]" : "border-white/10 bg-white/[0.06] text-white"}`}
                     key={player.id}
                     onClick={() => setSelected(active ? null : player)}
                     type="button"
                   >
-                    <span className="font-mono text-xl font-black">#{player.number}</span>
-                    <span>
-                      <span className="block font-black">{player.name}</span>
-                      <span className="text-xs font-bold uppercase tracking-widest opacity-70">{player.positions.join("/")}</span>
+                    <span className="font-mono text-lg font-black">#{player.number}</span>
+                    <span className="min-w-0">
+                      <span className="block truncate font-black">{player.name}</span>
+                      <span className="block truncate text-xs font-bold uppercase tracking-widest opacity-70">{player.positions.join("/")}</span>
                     </span>
                     <span className="rounded-xl bg-black/20 px-2 py-1 font-mono text-lg font-black">{player.rating}</span>
                   </button>
@@ -381,52 +406,52 @@ export default function Game() {
           </div>
         </aside>
 
-        <div className="order-0 lg:order-none"><Pitch slots={slots} selected={selected} onSlot={addToSlot} /></div>
+        <div className="order-0 min-w-0 lg:order-none"><Pitch slots={slots} selected={selected} onSlot={addToSlot} /></div>
 
-        <aside className="order-2 rounded-[2rem] border border-white/10 bg-[#0d241c]/90 p-4 lg:order-none">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-xs font-black uppercase tracking-[0.22em] text-emerald-100/60">Tournament desk</p>
-              <h2 className="mt-1 text-2xl font-black text-white">Box score</h2>
+        <aside className={`order-2 min-w-0 rounded-[1.75rem] p-3 sm:p-4 lg:order-none ${panel}`}>
+          <div className="flex min-w-0 items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-100/60">Tournament desk</p>
+              <h2 className="mt-1 truncate text-2xl font-black text-white">Box score</h2>
             </div>
-            <Button onClick={() => setStage("landing")} variant="ghost">Home</Button>
+            <Button className="w-auto px-3" onClick={() => setStage("landing")} variant="ghost">Home</Button>
           </div>
 
           <div className="mt-4 grid grid-cols-3 gap-2">
             <StatPill label="OVR" value={stats.overall || "—"} />
-            <StatPill label="Style" value={styleCopy[style].label.slice(0, 3)} />
+            <StatPill label="Style" value={styleCopy[style].short} />
             <StatPill label="Open" value={openCount} />
           </div>
 
-          <div className="mt-5 overflow-hidden rounded-2xl border border-white/10">
+          <div className="mt-4 overflow-hidden rounded-2xl border border-white/10">
             {slots.map((slot) => (
-              <div className="grid grid-cols-[3rem_1fr_auto] items-center gap-2 border-b border-white/10 bg-white/[0.04] px-3 py-2 last:border-b-0" key={slot.id}>
-                <span className="font-mono text-sm font-black text-amber-200">{slot.label}</span>
+              <div className="grid min-w-0 grid-cols-[2.5rem_minmax(0,1fr)_2.5rem] items-center gap-2 border-b border-white/10 bg-white/[0.04] px-3 py-2 last:border-b-0" key={slot.id}>
+                <span className="font-mono text-sm font-black text-[#f6c85f]">{slot.label}</span>
                 <span className="truncate text-sm font-bold text-white/90">{slot.player?.name ?? "—"}</span>
-                <span className="font-mono text-sm font-black text-white/70">{slot.player?.rating ?? ""}</span>
+                <span className="text-right font-mono text-sm font-black text-white/70">{slot.player?.rating ?? ""}</span>
               </div>
             ))}
           </div>
 
-          <div className="mt-4 grid gap-2"><Button disabled={!isComplete} onClick={simulate}>Simulate Cup</Button></div>
+          <div className="mt-4 hidden lg:grid"><Button disabled={!isComplete} onClick={simulate}>Simulate Cup</Button></div>
 
           {campaign && (
-            <div className="mt-5 rounded-[1.5rem] border border-amber-200/25 bg-amber-200/10 p-4">
-              <p className="text-xs font-black uppercase tracking-[0.22em] text-amber-100/80">Result card</p>
-              <h3 className="mt-1 text-4xl font-black text-white">{campaign.champion ? "Champions" : "Eliminated"}</h3>
+            <div className="mt-5 rounded-[1.5rem] border border-[#f6c85f]/25 bg-[#f6c85f]/10 p-4">
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-[#f6c85f]/80">Result card</p>
+              <h3 className="mt-1 text-4xl font-black tracking-[-0.05em] text-white">{campaign.champion ? "Champions" : "Eliminated"}</h3>
               <div className="mt-3 grid grid-cols-4 gap-2">
                 <StatPill label="Rec" value={campaign.record} />
                 <StatPill label="GF" value={campaign.gf} />
                 <StatPill label="GA" value={campaign.ga} />
                 <StatPill label="Badge" value={campaign.badge ? "★" : "—"} />
               </div>
-              {campaign.badge && <p className="mt-3 rounded-full bg-amber-300 px-3 py-2 text-center text-sm font-black uppercase tracking-widest text-emerald-950">{campaign.badge}</p>}
+              {campaign.badge && <p className="mt-3 rounded-full bg-[#f6c85f] px-3 py-2 text-center text-sm font-black uppercase tracking-widest text-[#142018]">{campaign.badge}</p>}
               <div className="mt-4 space-y-2">
                 {campaign.matches.map((match) => (
                   <div className="rounded-2xl bg-black/20 p-3" key={match.phase}>
                     <div className="flex items-center justify-between gap-3">
                       <span className="font-bold text-white">{match.phase}</span>
-                      <span className="font-mono text-xl font-black text-amber-200">{match.gf}-{match.ga}</span>
+                      <span className="font-mono text-xl font-black text-[#f6c85f]">{match.gf}-{match.ga}</span>
                     </div>
                     <p className="text-xs uppercase tracking-widest text-emerald-50/60">vs {match.opponent} · OVR {match.opponentOverall} {match.penalties ? `· ${match.penalties}` : ""}</p>
                   </div>
@@ -436,6 +461,10 @@ export default function Game() {
           )}
         </aside>
       </section>
+
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[#07130f]/92 p-3 backdrop-blur lg:hidden">
+        <Button disabled={!isComplete} onClick={simulate}>{isComplete ? "Simulate Cup" : `${openCount} slots open`}</Button>
+      </div>
     </main>
   );
 }
