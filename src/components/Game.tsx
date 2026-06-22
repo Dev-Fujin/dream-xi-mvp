@@ -74,6 +74,17 @@ function StatPill({ label, value }: { label: string; value: number | string }) {
   );
 }
 
+function FlagIcon({ code, alt, className = "" }: { code: string; alt: string; className?: string }) {
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      alt={alt}
+      className={`inline-block rounded-md object-cover shadow-lg shadow-black/25 ${className}`}
+      src={`https://flagicons.lipis.dev/flags/4x3/${code}.svg`}
+    />
+  );
+}
+
 function pickRandomSquad(excludeId?: string) {
   const pool = squads.filter((squad) => squad.id !== excludeId);
   return pool[Math.floor(Math.random() * pool.length)] ?? squads[0];
@@ -156,7 +167,7 @@ function MatchTimeline({ match, index }: { match: Match; index: number }) {
         <div className="min-w-0">
           <span className="block font-bold text-white">{match.phase}</span>
           <span className="block truncate text-xs uppercase tracking-widest text-emerald-50/60">
-            vs {match.opponentFlag} {match.opponent} {match.opponentCup} · OVR {match.opponentOverall}
+            vs <FlagIcon alt={`${match.opponent} flag`} className="mx-1 h-3.5 w-5 align-[-2px]" code={match.opponentFlag} /> {match.opponent} {match.opponentCup} · OVR {match.opponentOverall}
           </span>
         </div>
         <span className="font-mono text-xl font-black text-[#f6c85f]">{match.gf}-{match.ga}</span>
@@ -203,6 +214,7 @@ export default function Game() {
   const [rollingSquad, setRollingSquad] = useState<Squad>(squads[0]);
   const [selected, setSelected] = useState<Player | null>(null);
   const [campaign, setCampaign] = useState<Campaign | null>(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [celebrate, setCelebrate] = useState(false);
   const celebrationTimeout = useRef<number | null>(null);
   const pitchRef = useRef<HTMLDivElement>(null);
@@ -410,7 +422,9 @@ export default function Game() {
             {stage === "rolling" ? "Rolling…" : "Bereit für den ersten Roll?"}
           </h1>
           <div className="mx-auto mt-7 max-w-md overflow-hidden rounded-[2rem] border border-[#f6c85f]/20 bg-black/22 p-5 sm:p-8">
-            <div className={`text-7xl font-black transition sm:text-8xl ${stage === "rolling" ? "animate-pulse" : ""}`}>{active ? active.flag : "🎲"}</div>
+            <div className={`mx-auto grid h-28 w-36 place-items-center transition sm:h-32 sm:w-44 ${stage === "rolling" ? "animate-pulse" : ""}`}>
+              {active ? <FlagIcon alt={`${active.country} flag`} className="h-full w-full" code={active.flagCode} /> : <span className="text-7xl font-black sm:text-8xl">🎲</span>}
+            </div>
             <div className="mt-4 break-words font-mono text-2xl font-black text-[#f6c85f] sm:text-3xl">
               {active ? `${active.country} ${active.cup}` : `${shape} · ${styleCopy[style].label}`}
             </div>
@@ -426,6 +440,14 @@ export default function Game() {
 
   return (
     <>
+      <button
+        aria-label="Menü öffnen"
+        className="fixed right-3 top-3 z-50 grid h-12 w-12 place-items-center rounded-2xl border border-white/10 bg-[#10241d]/95 text-2xl font-black text-[#f6c85f] shadow-xl shadow-black/30 backdrop-blur lg:hidden"
+        onClick={() => setMobileMenuOpen(true)}
+        type="button"
+      >
+        ☰
+      </button>
       <main className={`${shell} pb-20 lg:pb-5`}>
         <header className={`grid gap-3 rounded-[1.75rem] p-3 sm:p-4 lg:grid-cols-[1fr_22rem] lg:items-center ${panel}`}>
           <div className="min-w-0">
@@ -439,17 +461,20 @@ export default function Game() {
           </div>
         </header>
 
-        <section className="grid min-w-0 gap-3 lg:grid-cols-[minmax(0,0.92fr)_minmax(340px,1.22fr)_minmax(0,0.9fr)] lg:gap-4">
+        <section className="grid min-w-0 gap-3 lg:grid-cols-[minmax(0,0.78fr)_minmax(340px,1.22fr)] lg:gap-4">
           <aside className={`order-1 min-w-0 rounded-[1.75rem] p-3 sm:p-4 lg:order-none ${panel}`}>
             <div className="grid min-w-0 gap-3">
               <div className="min-w-0">
                 <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-100/60">Rolled squad</p>
-                <h2 className="mt-1 truncate text-3xl font-black tracking-[-0.04em] text-white">{draw?.flag} {draw?.country}</h2>
+                <h2 className="mt-1 flex min-w-0 items-center gap-3 text-2xl font-black tracking-[-0.04em] text-white sm:text-3xl">
+                  {draw && <FlagIcon alt={`${draw.country} flag`} className="h-8 w-11 shrink-0" code={draw.flagCode} />}
+                  <span className="truncate">{draw?.country}</span>
+                </h2>
                 <p className="font-mono text-sm text-[#f6c85f]">Cup {draw?.cup} · OVR {draw?.overall}</p>
               </div>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <Button disabled={isComplete} onClick={startRoll} variant="secondary">Roll again</Button>
-                <Button onClick={resetDraft} variant="secondary">New XI</Button>
+                <Button className="hidden sm:block" onClick={resetDraft} variant="secondary">Restart</Button>
               </div>
               <Button disabled={!playerPool.length || isComplete} onClick={autoPick} variant="secondary">Auto pick</Button>
             </div>
@@ -464,11 +489,11 @@ export default function Game() {
                       className={`grid min-h-16 min-w-0 grid-cols-[2.25rem_minmax(0,1fr)_auto] items-center gap-2 rounded-2xl border p-3 text-left transition focus:outline-none focus:ring-2 focus:ring-[#f6c85f] ${active ? "border-[#f6c85f] bg-[#f6c85f] text-[#142018]" : "border-white/10 bg-white/[0.06] text-white"}`}
                       key={player.id}
                       onClick={() => {
-                      setSelected(active ? null : player);
-                      if (!active) {
-                        pitchRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                      }
-                    }}
+                        setSelected(active ? null : player);
+                        if (!active) {
+                          pitchRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+                        }
+                      }}
                       type="button"
                     >
                       <span className="font-mono text-lg font-black">#{player.number}</span>
@@ -485,65 +510,73 @@ export default function Game() {
             </div>
           </aside>
 
-          <div className="order-0 min-w-0 lg:order-none"><Pitch slots={slots} selected={selected} onSlot={addToSlot} ref={pitchRef} /></div>
-
-          <aside className={`order-2 min-w-0 rounded-[1.75rem] p-3 sm:p-4 lg:order-none ${panel}`}>
-            <div className="flex min-w-0 items-center justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-100/60">Tournament desk</p>
-                <h2 className="mt-1 truncate text-2xl font-black text-white">Box score</h2>
-              </div>
-              <Button className="w-auto px-3" onClick={() => setStage("landing")} variant="ghost">Home</Button>
+          <div className="order-0 min-w-0 lg:order-none">
+            <Pitch slots={slots} selected={selected} onSlot={addToSlot} ref={pitchRef} />
+            <div className="mt-3 hidden lg:grid">
+              <Button disabled={!isComplete || Boolean(campaign)} onClick={simulate}>{campaign ? "Turnier gespielt" : "Simulate Cup"}</Button>
             </div>
+          </div>
+        </section>
 
-            <div className="mt-4 grid grid-cols-3 gap-2">
-              <StatPill label="OVR" value={stats.overall || "—"} />
-              <StatPill label="Style" value={styleCopy[style].short} />
-              <StatPill label="Open" value={openCount} />
+        {campaign && (
+          <section className="rounded-[1.75rem] border border-[#f6c85f]/25 bg-[#f6c85f]/10 p-3 sm:p-4">
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-[#f6c85f]/80">Cup Run</p>
+            <h2 className="mt-1 text-3xl font-black tracking-[-0.05em] text-white sm:text-4xl">{campaign.champion ? "Champions" : "Eliminated"}</h2>
+            <div className="mt-3 grid grid-cols-4 gap-2">
+              <StatPill label="Rec" value={campaign.record} />
+              <StatPill label="GF" value={campaign.gf} />
+              <StatPill label="GA" value={campaign.ga} />
+              <StatPill label="Badge" value={campaign.badge ? "★" : "—"} />
             </div>
-
-            <div className="mt-4 overflow-hidden rounded-2xl border border-white/10">
-              {slots.map((slot) => (
-                <div className="grid min-w-0 grid-cols-[2.5rem_minmax(0,1fr)_2.5rem] items-center gap-2 border-b border-white/10 bg-white/[0.04] px-3 py-2 last:border-b-0" key={slot.id}>
-                  <span className="font-mono text-sm font-black text-[#f6c85f]">{slot.label}</span>
-                  <span className="truncate text-sm font-bold text-white/90">{slot.player?.name ?? "—"}</span>
-                  <span className="text-right font-mono text-sm font-black text-white/70">{slot.player?.rating ?? ""}</span>
-                </div>
+            {campaign.badge && <p className="mt-3 rounded-full bg-[#f6c85f] px-3 py-2 text-center text-sm font-black uppercase tracking-widest text-[#142018]">{campaign.badge}</p>}
+            <div className="mt-4 grid gap-2 lg:grid-cols-2">
+              {campaign.matches.map((match, index) => (
+                <MatchTimeline index={index} key={match.phase} match={match} />
               ))}
             </div>
-
-            <div className="mt-4 hidden lg:grid"><Button disabled={!isComplete || Boolean(campaign)} onClick={simulate}>{campaign ? "Turnier gespielt" : "Simulate Cup"}</Button></div>
-
-            {campaign && (
-              <div className="mt-5 rounded-[1.5rem] border border-[#f6c85f]/25 bg-[#f6c85f]/10 p-4">
-                <p className="text-xs font-black uppercase tracking-[0.18em] text-[#f6c85f]/80">Result card</p>
-                <h3 className="mt-1 text-4xl font-black tracking-[-0.05em] text-white">{campaign.champion ? "Champions" : "Eliminated"}</h3>
-                <div className="mt-3 grid grid-cols-4 gap-2">
-                  <StatPill label="Rec" value={campaign.record} />
-                  <StatPill label="GF" value={campaign.gf} />
-                  <StatPill label="GA" value={campaign.ga} />
-                  <StatPill label="Badge" value={campaign.badge ? "★" : "—"} />
-                </div>
-                {campaign.badge && <p className="mt-3 rounded-full bg-[#f6c85f] px-3 py-2 text-center text-sm font-black uppercase tracking-widest text-[#142018]">{campaign.badge}</p>}
-                <div className="mt-4 space-y-2">
-                  {campaign.matches.map((match, index) => (
-                    <MatchTimeline index={index} key={match.phase} match={match} />
-                  ))}
-                </div>
-              </div>
-            )}
-          </aside>
-        </section>
+          </section>
+        )}
 
         <div className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[#07130f]/92 p-3 backdrop-blur lg:hidden">
           <Button disabled={!isComplete || Boolean(campaign)} onClick={simulate}>{!isComplete ? `${openCount} slots open` : campaign ? "Turnier gespielt" : "Simulate Cup"}</Button>
         </div>
       </main>
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 z-[60] bg-black/60 lg:hidden" onClick={() => setMobileMenuOpen(false)}>
+          <aside
+            className={`ml-auto h-full w-[min(20rem,86vw)] rounded-l-[2rem] p-4 ${panel}`}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-center justify-between gap-3">
+              <p className="font-mono text-xs font-black uppercase tracking-[0.2em] text-[#f6c85f]/80">Menü</p>
+              <button className="grid h-10 w-10 place-items-center rounded-xl bg-white/10 text-xl font-black text-white" onClick={() => setMobileMenuOpen(false)} type="button">×</button>
+            </div>
+            <div className="mt-6 grid gap-3">
+              <Button
+                onClick={() => {
+                  resetDraft();
+                  setMobileMenuOpen(false);
+                }}
+                variant="secondary"
+              >
+                Restart
+              </Button>
+              <Button
+                onClick={() => {
+                  setStage("landing");
+                  setMobileMenuOpen(false);
+                }}
+                variant="secondary"
+              >
+                Landing Page
+              </Button>
+            </div>
+          </aside>
+        </div>
+      )}
       {celebrate && draw && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="text-9xl font-black animate-pulse">
-            {draw.flag}
-          </div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/25">
+          <FlagIcon alt={`${draw.country} flag`} className="h-32 w-44 animate-pulse sm:h-40 sm:w-56" code={draw.flagCode} />
         </div>
       )}
     </>
