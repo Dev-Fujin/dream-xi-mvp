@@ -51,6 +51,16 @@ button:disabled {
   color: #142018;
 }
 
+@keyframes timeline-fill {
+  from { width: 0%; }
+  to { width: 100%; }
+}
+
+@keyframes event-pop {
+  from { opacity: 0; transform: translateY(0.35rem) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

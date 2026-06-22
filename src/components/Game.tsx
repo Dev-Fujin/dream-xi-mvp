@@ -5,6 +5,7 @@ import {
   availablePlayers,
   calcStats,
   Campaign,
+  Match,
   compatibleSlotIds,
   FormationName,
   formation,
@@ -148,6 +149,50 @@ function Pitch({
   );
 }
 
+function MatchTimeline({ match, index }: { match: Match; index: number }) {
+  return (
+    <div className="rounded-2xl bg-black/20 p-3">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <span className="block font-bold text-white">{match.phase}</span>
+          <span className="block truncate text-xs uppercase tracking-widest text-emerald-50/60">
+            vs {match.opponentFlag} {match.opponent} {match.opponentCup} · OVR {match.opponentOverall}
+          </span>
+        </div>
+        <span className="font-mono text-xl font-black text-[#f6c85f]">{match.gf}-{match.ga}</span>
+      </div>
+      <div className="mt-3 rounded-xl border border-white/10 bg-[#07130f]/70 p-2">
+        <div className="flex items-center justify-between font-mono text-xs font-black text-emerald-50/60">
+          <span>0&apos;</span>
+          <span className="animate-pulse text-[#f6c85f]">90+{match.stoppage}&apos;</span>
+        </div>
+        <div className="relative mt-2 h-2 overflow-hidden rounded-full bg-white/10">
+          <div className="h-full rounded-full bg-[#f6c85f]" style={{ animation: `timeline-fill 4s ease-out ${index * 0.18}s both` }} />
+        </div>
+        <div className="mt-3 grid gap-1.5">
+          {match.events.map((event, eventIndex) => (
+            <div
+              className={`grid grid-cols-[3.25rem_minmax(0,1fr)] items-center gap-2 rounded-lg px-2 py-1.5 text-xs ${
+                event.type === "goal"
+                  ? event.team === "us"
+                    ? "bg-[#f6c85f]/18 text-[#f6c85f]"
+                    : "bg-red-500/15 text-red-100"
+                  : "bg-white/[0.05] text-emerald-50/70"
+              }`}
+              key={`${event.minute}-${event.text}-${eventIndex}`}
+              style={{ animation: `event-pop .35s ease-out ${0.4 + eventIndex * 0.12 + index * 0.18}s both` }}
+            >
+              <span className="font-mono font-black">{event.minute > 90 ? `90+${event.minute - 90}` : event.minute}&apos;</span>
+              <span className="truncate font-bold">{event.type === "goal" ? "⚽ " : ""}{event.text}</span>
+            </div>
+          ))}
+        </div>
+        {match.penalties && <p className="mt-2 rounded-lg bg-[#f6c85f]/15 px-2 py-1.5 text-xs font-black uppercase tracking-widest text-[#f6c85f]">{match.penalties}</p>}
+      </div>
+    </div>
+  );
+}
+
 export default function Game() {
   const [stage, setStage] = useState<Stage>("landing");
   const [showRules, setShowRules] = useState(false);
@@ -253,7 +298,17 @@ export default function Game() {
   }
 
   function simulate() {
-    setCampaign(simulateCampaign(stats));
+    if (campaign) return;
+    const ownSquadIds = new Set(
+      slots
+        .map((slot) => {
+          const player = slot.player;
+          if (!player) return undefined;
+          return squads.find((squad) => squad.country === player.country && squad.cup === player.cup)?.id;
+        })
+        .filter(Boolean) as string[],
+    );
+    setCampaign(simulateCampaign(stats, [...ownSquadIds]));
   }
 
   if (stage === "landing") {
@@ -457,7 +512,7 @@ export default function Game() {
               ))}
             </div>
 
-            <div className="mt-4 hidden lg:grid"><Button disabled={!isComplete} onClick={simulate}>Simulate Cup</Button></div>
+            <div className="mt-4 hidden lg:grid"><Button disabled={!isComplete || Boolean(campaign)} onClick={simulate}>{campaign ? "Turnier gespielt" : "Simulate Cup"}</Button></div>
 
             {campaign && (
               <div className="mt-5 rounded-[1.5rem] border border-[#f6c85f]/25 bg-[#f6c85f]/10 p-4">
@@ -471,14 +526,8 @@ export default function Game() {
                 </div>
                 {campaign.badge && <p className="mt-3 rounded-full bg-[#f6c85f] px-3 py-2 text-center text-sm font-black uppercase tracking-widest text-[#142018]">{campaign.badge}</p>}
                 <div className="mt-4 space-y-2">
-                  {campaign.matches.map((match) => (
-                    <div className="rounded-2xl bg-black/20 p-3" key={match.phase}>
-                      <div className="flex items-center justify-between gap-3">
-                        <span className="font-bold text-white">{match.phase}</span>
-                        <span className="font-mono text-xl font-black text-[#f6c85f]">{match.gf}-{match.ga}</span>
-                      </div>
-                      <p className="text-xs uppercase tracking-widest text-emerald-50/60">vs {match.opponent} · OVR {match.opponentOverall} {match.penalties ? `· ${match.penalties}` : ""}</p>
-                    </div>
+                  {campaign.matches.map((match, index) => (
+                    <MatchTimeline index={index} key={match.phase} match={match} />
                   ))}
                 </div>
               </div>
@@ -487,7 +536,7 @@ export default function Game() {
         </section>
 
         <div className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[#07130f]/92 p-3 backdrop-blur lg:hidden">
-          <Button disabled={!isComplete} onClick={simulate}>{isComplete ? "Simulate Cup" : `${openCount} slots open`}</Button>
+          <Button disabled={!isComplete || Boolean(campaign)} onClick={simulate}>{!isComplete ? `${openCount} slots open` : campaign ? "Turnier gespielt" : "Simulate Cup"}</Button>
         </div>
       </main>
       {celebrate && draw && (
